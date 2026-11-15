@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#153b35">
+<title>بدّل | سوق الجزائر</title>
+<style>
+:root{--ink:#18332e;--green:#176b58;--mint:#e7f4ee;--bg:#f5f7f5;--muted:#718078;--line:#e3eae5;--white:#fff;--orange:#e58a42}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Tahoma,Arial,sans-serif}
+button,input,select,textarea{font:inherit}button{cursor:pointer}
+header{background:#153b35;color:white;padding:15px max(20px,calc((100% - 1160px)/2));display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{display:flex;align-items:center;gap:10px;font-size:25px;font-weight:800;color:#a8e5c8}.brand-mark{width:38px;height:38px;border-radius:12px;background:#a8e5c8;color:#153b35;display:grid;place-items:center}
+.header-note{font-size:13px;color:#d3e5dc}.wrap{max-width:1160px;margin:auto;padding:24px 18px}
+.hero{background:linear-gradient(115deg,#153b35,#237b62);color:white;border-radius:22px;padding:30px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.hero h1{font-size:clamp(24px,4vw,36px);margin:0 0 10px}.hero p{margin:0;color:#d8ebe2;line-height:1.8;max-width:620px}.hero .pill{display:inline-block;margin-top:16px;background:#ffffff20;border:1px solid #ffffff35;padding:7px 12px;border-radius:99px;font-size:12px}
+.hero-icon{font-size:62px;opacity:.9}
+.toolbar{display:grid;grid-template-columns:1fr 180px 180px;gap:10px;margin:22px 0 14px}
+input,select,textarea{border:1px solid var(--line);background:white;border-radius:11px;padding:12px;color:var(--ink);width:100%;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#5aab8b;box-shadow:0 0 0 3px #5aab8b20}
+.categories{display:flex;gap:8px;overflow:auto;padding:3px 0 14px}
+.chip{white-space:nowrap;border:1px solid var(--line);background:white;border-radius:99px;padding:9px 14px;color:#52645b}
+.chip.active{background:var(--ink);color:white;border-color:var(--ink)}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px 0}
+.section-head h2{font-size:21px;margin:0}.count{font-size:13px;color:var(--muted)}
+.products{display:grid;grid-template-columns:repeat( auto-fill,minmax(225px,1fr));gap:16px}
+.card{background:white;border:1px solid var(--line);border-radius:17px;overflow:hidden;box-shadow:0 5px 18px #19382b08;display:flex;flex-direction:column}
+.photo{height:178px;background:#edf2ee;position:relative;display:grid;place-items:center;overflow:hidden}
+.photo img{width:100%;height:100%;object-fit:cover}.no-photo{font-size:42px;color:#9aafa2}
+.tag{position:absolute;top:11px;right:11px;background:#fff;padding:6px 10px;border-radius:99px;font-size:12px;font-weight:bold}
+.card-body{padding:14px;display:flex;flex-direction:column;flex:1}
+.card h3{margin:5px 0 8px;font-size:17px}.price{font-size:20px;font-weight:800;color:var(--green)}
+.price small{font-size:12px;font-weight:normal;color:var(--muted)}
+.meta{color:var(--muted);font-size:12px;line-height:1.8;margin:8px 0}
+.desc{font-size:13px;color:#52645b;line-height:1.7;min-height:38px}
+.actions{display:flex;gap:8px;margin-top:auto;padding-top:12px}
+.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:bold}
+.btn-main{background:var(--green);color:white;flex:1}.btn-light{background:var(--mint);color:var(--green)}
+.empty{grid-column:1/-1;text-align:center;padding:42px 15px;background:white;border:1px dashed #cbd9d0;border-radius:16px;color:var(--muted)}
+.panel{background:white;border:1px solid var(--line);border-radius:18px;padding:22px;margin-top:28px}
+.panel h2{margin:0 0 6px;font-size:21px}.hint{color:var(--muted);font-size:13px;line-height:1.7;margin:0 0 18px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.field label{display:block;font-size:13px;font-weight:bold;margin-bottom:7px}.field.full{grid-column:1/-1}
+textarea{min-height:85px;resize:vertical}
+.form-actions{display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}
+.notice{font-size:12px;color:var(--muted);line-height:1.7}
+footer{text-align:center;color:#829087;font-size:12px;padding:25px}
+#toast{position:fixed;bottom:18px;left:18px;background:#18332e;color:white;padding:12px 16px;border-radius:12px;box-shadow:0 8px 25px #0002;display:none;z-index:5}
+@media(max-width:700px){header{padding:13px 17px}.header-note{display:none}.wrap{padding:18px 13px}.hero{padding:23px}.hero-icon{display:none}.toolbar{grid-template-columns:1fr 1fr}.toolbar input{grid-column:1/-1}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.panel{padding:17px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="brand-mark">ب</span> بدّل</div>
+  <div class="header-note">سوق جزائري للبيع والشراء والتأجير</div>
+</header>
+<main class="wrap">
+  <section class="hero">
+    <div>
+      <h1>حاجتك ممكن تفيد غيرك.</h1>
+      <p>اعرض ما لا تحتاجه للبيع أو التأجير، وابحث عن احتياجاتك بالقرب منك. أسعار واضحة وتفاصيل تساعدك تختار.</p>
+      <span class="pill">نسخة تجريبية محلية · الأسعار بالدينار الجزائري</span>
+    </div>
+    <div class="hero-icon">♻️</div>
+  </section>
+
+  <section class="toolbar" aria-label="البحث والتصفية">
+    <input id="search" type="search" placeholder="ابحث عن هاتف، دراجة، أثاث..." aria-label="بحث">
+    <select id="wilayaFilter" aria-label="الولاية"><option value="">كل الولايات</option></select>
+    <select id="kindFilter" aria-label="نوع العرض">
+      <option value="">بيع وإيجار</option><option value="بيع">للبيع</option><option value="إيجار">للإيجار</option>
+    </select>
+  </section>
+  <nav class="categories" id="categories" aria-label="الأقسام"></nav>
+  <div class="section-head"><h2>العروض المتاحة</h2><span class="count" id="count"></span></div>
+  <section class="products" id="products" aria-live="polite"></section>
+
+  <section class="panel" id="add">
+    <h2>اعرض منتجك</h2>
+    <p class="hint">املأ التفاصيل بدقة. المنتج سيُحفظ في هذا المتصفح فقط في هذه النسخة التجريبية.</p>
+    <form id="listingForm">
+      <div class="form-grid">
+        <div class="field"><label for="name">اسم المنتج *</label><input id="name" maxlength="70" required placeholder="مثلاً: دراجة هوائية"></div>
+        <div class="field"><label for="category">القسم *</label><select id="category" required>
+          <option value="إلكترونيات">إلكترونيات</option><option value="أثاث">أثاث</option><option value="ملابس">ملابس</option><option value="رياضة">رياضة</option><option value="أدوات">أدوات</option><option value="مركبات">مركبات</option><option value="أخرى">أخرى</option>
+        </select></div>
+        <div class="field"><label for="kind">نوع العرض *</label><select id="kind"><option value="بيع">بيع</option><option value="إيجار">إيجار</option></select></div>
+        <div class="field"><label for="condition">حالة المنتج *</label><select id="condition"><option>جديد</option><option>مستعمل - ممتاز</option><option>مستعمل - جيد</option><option>يحتاج إصلاحًا</option></select></div>
+        <div class="field"><label for="price">السعر بالدينار الجزائري (دج) *</label><input id="price" type="number" min="1" max="1000000000" step="1" required placeholder="مثلاً: 15000"></div>
+        <div class="field" id="unitField" style="display:none"><label for="unit">مدة الإيجار</label><select id="unit"><option value="لليوم">لليوم</option><option value="للأسبوع">للأسبوع</option><option value="للشهر">للشهر</option></select></div>
+        <div class="field"><label for="wilaya">الولاية *</label><select id="wilaya" required></select></div>
+        <div class="field"><label for="city">المدينة / البلدية</label><input id="city" maxlength="55" placeholder="مثلاً: باب الزوار"></div>
+        <div class="field"><label for="seller">اسم البائع *</label><input id="seller" maxlength="45" required placeholder="الاسم المعروض"></div>
+        <div class="field"><label for="photo">صورة المنتج</label><input id="photo" type="file" accept="image/jpeg,image/png,image/webp"></div>
+        <div class="field full"><label for="description">وصف المنتج</label><textarea id="description" maxlength="500" placeholder="اكتب المواصفات والحالة وأي تفاصيل مهمة..."></textarea></div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-main" type="submit">نشر العرض</button>
+        <span class="notice">لا تضع رقم هاتفك أو معلومات حساسة في الوصف العام.</span>
+      </div>
+    </form>
+  </section>
+</main>
+<footer>بدّل © 2026 · نموذج تجريبي، وليس منصة معاملات فعلية بعد</footer>
+<div id="toast" role="status"></div>
+<script type="module">
+    import { createClient } from
+'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+const supabaseUrl = 'https://wmubsxesiuqnircgxylt.supabase.co';
+const supabaseKey = 'sb_publishable_PqX_Z9PoK7GoIhW0lCyEAw_1wOUI5mX';
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+const WILAYAS = ["أدرار","الشلف","الأغواط","أم البواقي","باتنة","بجاية","بسكرة","بشار","البليدة","البويرة","تمنراست","تبسة","تلمسان","تيارت","تيزي وزو","الجزائر","الجلفة","جيجل","سطيف","سعيدة","سكيكدة","سيدي بلعباس","عنابة","قالمة","قسنطينة","المدية","مستغانم","المسيلة","معسكر","ورقلة","وهران","البيض","إليزي","برج بوعريريج","بومرداس","الطارف","تندوف","تيسمسيلت","الوادي","خنشلة","سوق أهراس","تيبازة","ميلة","عين الدفلى","النعامة","عين تموشنت","غرداية","غليزان","تيميمون","برج باجي مختار","أولاد جلال","بني عباس","عين صالح","عين قزام","تقرت","جانت","المغير","المنيعة"];
+const CATS=["الكل","إلكترونيات","أثاث","ملابس","رياضة","أدوات","مركبات","أخرى"];
+let listings = [];
+let activeCategory = "الكل";
+
+async function loadListings() {
+  const { data, error } = await supabase
+    .from("listings")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error(error);
+    toast("تعذر تحميل العروض من قاعدة البيانات");
+    return;
+  }
+
+  listings = data.map(p => ({
+    id: p.id,
+    name: p.name,
+    category: p.category,
+    kind: p.kind,
+    condition: p.condition,
+    price: p.price,
+    unit: p.unit || "",
+    wilaya: p.wilaya,
+    city: p.city || "",
+    seller: p.seller,
+    description: p.description || "",
+    image: p.image_url || "",
+    created: new Date(p.created_at).getTime()
+  }));
+
+  render();
+}
+const $=id=>document.getElementById(id);
+function escapeHTML(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function toast(msg){$("toast").textContent=msg;$("toast").style.display="block";setTimeout(()=>$("toast").style.display="none",3000)}
+function fillLocations(){
+  $("wilaya").innerHTML='<option value="">اختر الولاية</option>'+WILAYAS.map(w=>`<option>${escapeHTML(w)}</option>`).join("");
+  $("wilayaFilter").innerHTML='<option value="">كل الولايات</option>'+WILAYAS.map(w=>`<option>${escapeHTML(w)}</option>`).join("");
+}
+function renderCategories(){
+  $("categories").innerHTML=CATS.map(c=>`<button type="button" class="chip ${activeCategory===c?"active":""}" data-cat="${escapeHTML(c)}">${escapeHTML(c)}</button>`).join("");
+  $("categories").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{activeCategory=b.dataset.cat;renderCategories();render()}));
+}
+function money(n){return Number(n).toLocaleString("ar-DZ")+" دج"}
+function render(){
+ const q=$("search").value.trim().toLocaleLowerCase("ar");
+ const w=$("wilayaFilter").value,k=$("kindFilter").value;
+ const found=listings.filter(p=>(!q||(p.name+" "+p.description+" "+p.city+" "+p.wilaya).toLocaleLowerCase("ar").includes(q))&&(!w||p.wilaya===w)&&(!k||p.kind===k)&&(activeCategory==="الكل"||p.category===activeCategory));
+ $("count").textContent=found.length+" عرض";
+ $("products").innerHTML=found.length?found.map(p=>`
+ <article class="card">
+  <div class="photo">${p.image?`<img src="${p.image}" alt="${escapeHTML(p.name)}">`:'<span class="no-photo">📦</span>'}<span class="tag">${escapeHTML(p.kind)}</span></div>
+  <div class="card-body"><h3>${escapeHTML(p.name)}</h3>
+  <div class="price">${money(p.price)} ${p.kind==="إيجار"?`<small>${escapeHTML(p.unit)}</small>`:""}</div>
+  <div class="meta">${escapeHTML(p.category)} · ${escapeHTML(p.condition)}<br>📍 ${escapeHTML(p.wilaya)}${p.city?" - "+escapeHTML(p.city):""}<br>البائع: ${escapeHTML(p.seller)}</div>
+  <p class="desc">${escapeHTML(p.description||"لا يوجد وصف إضافي.")}</p>
+  <div class="actions"><button class="btn btn-light" type="button" data-detail="${p.id}">التفاصيل</button><button class="btn btn-main" type="button" data-contact="${p.id}">${p.kind==="بيع"?"طلب شراء":"طلب استئجار"}</button></div></div>
+ </article>`).join(""):'<div class="empty">لا توجد عروض مطابقة. جرّب تغيير البحث أو أضف عرضًا جديدًا.</div>';
+ $("products").querySelectorAll("[data-detail]").forEach(b=>b.addEventListener("click",()=>{const p=listings.find(x=>x.id===Number(b.dataset.detail));if(p)alert("الوصف: "+(p.description||"غير متوفر")+"\nالحالة: "+p.condition+"\nالموقع: "+p.wilaya+" - "+(p.city||"غير محدد"))}));
+ $("products").querySelectorAll("[data-contact]").forEach(b=>b.addEventListener("click",()=>toast("هذه واجهة تجريبية فقط؛ طلبات الشراء والحجز والتواصل لم تُفعّل بعد.")));
+}
+$("kind").addEventListener("change",()=>{$("unitField").style.display=$("kind").value==="إيجار"?"block":"none"});
+["search","wilayaFilter","kindFilter"].forEach(id=>$(id).addEventListener(id==="search"?"input":"change",render));
+
+$("listingForm").addEventListener("submit", async e => {
+  e.preventDefault();
+
+  const price = Number($("price").value);
+
+  if (!Number.isSafeInteger(price) || price < 1) {
+    toast("أدخل سعرًا صحيحًا");
+    return;
+  }
+
+  const file = $("photo").files[0];
+
+  if (file && !["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+    toast("نوع الصورة غير مدعوم");
+    return;
+  }
+
+  if (file && file.size > 1.5 * 1024 * 1024) {
+    toast("حجم الصورة أكبر من 1.5 ميغابايت");
+    return;
+  }
+
+  const listing = {
+    name: $("name").value.trim(),
+    category: $("category").value,
+    kind: $("kind").value,
+    condition: $("condition").value,
+    price: price,
+    unit: $("unit").value,
+    wilaya: $("wilaya").value,
+    city: $("city").value.trim(),
+    seller: $("seller").value.trim(),
+    description: $("description").value.trim()
+  };
+
+  if (!listing.name || !listing.seller || !listing.wilaya) {
+    toast("أكمل الحقول المطلوبة");
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("listings")
+    .insert([listing])
+    .select()
+    .single();
+
+  if (error) {
+    console.error(error);
+    toast("فشل نشر العرض: " + error.message);
+    return;
+  }
+
+  listings.unshift({
+    ...listing,
+    id: data.id,
+    image: "",
+    created: Date.now()
+  });
+
+  e.target.reset();
+  $("unitField").style.display = "none";
+  render();
+
+  toast("تم نشر العرض بنجاح!");
+});
+fillLocations();
+renderCategories();
+render();
+loadListings();
+</script>
+</body>
+</html>
