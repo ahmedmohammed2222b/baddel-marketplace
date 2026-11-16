@@ -4,43 +4,210 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>لوحة تحكم بدّل</title>
+<title>إدارة عروض بدّل</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
-body{font-family:Arial;background:#f3f6f4;margin:0;padding:25px;color:#18332e}
-header{background:#176b58;color:white;padding:20px;border-radius:12px}
-main{background:white;padding:20px;margin-top:20px;border-radius:12px}
-button{background:#176b58;color:white;border:0;padding:12px 20px;border-radius:8px;cursor:pointer}
+*{box-sizing:border-box}
+body{
+  font-family:Arial,sans-serif;
+  background:#f3f6f4;
+  margin:0;
+  padding:20px;
+  color:#18332e;
+}
+header{
+  background:#176b58;
+  color:white;
+  padding:22px;
+  border-radius:14px;
+}
+header h2{margin-top:0}
+main{
+  max-width:1000px;
+  margin:20px auto;
+}
+.stats{
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  margin-bottom:20px;
+}
+#count{
+  font-size:30px;
+  color:#176b58;
+  font-weight:bold;
+}
+.actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:15px 0;
+}
+button{
+  background:#176b58;
+  color:white;
+  border:0;
+  padding:12px 20px;
+  border-radius:8px;
+  cursor:pointer;
+}
+button:disabled{opacity:.5}
+.card{
+  background:white;
+  padding:18px;
+  border-radius:12px;
+  margin-bottom:14px;
+  border:1px solid #e1eae4;
+  overflow-wrap:anywhere;
+}
+.card h3{color:#176b58}
+.card p{margin:9px 0;line-height:1.6}
+#message{
+  background:white;
+  padding:15px;
+  border-radius:10px;
+  margin:15px 0;
+}
+.back{background:#555}
 </style>
 </head>
-<body>
-<header>
-<h2>بدّل | لوحة تحكم الإدارة</h2>
-<p>مرحبًا بك في لوحة الإدارة</p>
-</header>
-<main>
-<h3>لوحة التحكم</h3>
-<p id="status">جاري التحقق من تسجيل الدخول...</p>
-<button onclick="location.href='index.html'">العودة للموقع</button>
-</main>
-<script>
-const supabaseUrl='https://wmubsxesiuqnircgxylt.supabase.co';
-const supabaseKey='sb_publishable_PqX_Z9PoK7GoIhW0lCyEAw_1wOUI5mX';
-const db=supabase.createClient(supabaseUrl,supabaseKey);
 
-async function checkAdmin(){
- const {data,error}=await db.auth.getSession();
- if(error){
-  document.getElementById('status').textContent=error.message;
-  return;
- }
- if(!data.session){
-  document.getElementById('status').textContent='يرجى تسجيل الدخول أولًا';
-  return;
- }
- document.getElementById('status').textContent='تم تسجيل الدخول بنجاح';
+<body>
+
+<header>
+  <h2>بدّل | إدارة المنتجات والعروض</h2>
+  <p>لوحة تحكم الإدارة</p>
+</header>
+
+<main>
+
+  <section class="stats">
+    <h3>إجمالي العروض</h3>
+    <div id="count">0</div>
+    <p>عدد العروض الموجودة في قاعدة البيانات</p>
+  </section>
+
+  <div class="actions">
+    <button id="refreshBtn" onclick="loadListings()">
+      تحديث العروض
+    </button>
+
+    <button class="back" onclick="location.href='index.html'">
+      العودة للموقع
+    </button>
+  </div>
+
+  <div id="message">جاري التحقق من تسجيل الدخول...</div>
+
+  <section id="listings"></section>
+
+</main>
+
+<script>
+const supabaseUrl =
+'https://wmubsxesiuqnircgxylt.supabase.co';
+
+const supabaseKey =
+'sb_publishable_PqX_Z9PoK7GoIhW0lCyEAw_1wOUI5mX';
+
+const db = supabase.createClient(
+  supabaseUrl,
+  supabaseKey
+);
+
+const message = document.getElementById("message");
+const listingsContainer = document.getElementById("listings");
+const count = document.getElementById("count");
+const refreshBtn = document.getElementById("refreshBtn");
+
+function showMessage(text){
+  message.textContent = text;
 }
-checkAdmin();
+
+async function loadListings(){
+
+  refreshBtn.disabled = true;
+  showMessage("جاري تحميل العروض...");
+  listingsContainer.replaceChildren();
+
+  try {
+
+    const {data:sessionData,error:sessionError} =
+      await db.auth.getSession();
+
+    if(sessionError) throw sessionError;
+
+    if(!sessionData.session){
+      showMessage("يرجى تسجيل الدخول أولاً.");
+      count.textContent = "0";
+      return;
+    }
+
+    const {data,error} = await db
+      .from("listings")
+      .select("*");
+
+    if(error) throw error;
+
+    count.textContent = data.length;
+
+    if(data.length === 0){
+      showMessage("لا توجد عروض ظاهرة أو لا توجد بيانات متاحة.");
+      return;
+    }
+
+    showMessage("تم تحميل العروض بنجاح.");
+
+    data.forEach((item,index)=>{
+
+      const card = document.createElement("article");
+      card.className = "card";
+
+      const title = document.createElement("h3");
+      title.textContent =
+        item.title || item.name || "عرض رقم " + (index+1);
+
+      card.appendChild(title);
+
+      Object.entries(item).forEach(([key,value])=>{
+
+        if(value === null || value === undefined || value === ""){
+          return;
+        }
+
+        const p = document.createElement("p");
+
+        let displayedValue = value;
+
+        if(typeof value === "object"){
+          displayedValue = JSON.stringify(value);
+        }
+
+        p.textContent = key + ": " + displayedValue;
+        card.appendChild(p);
+
+      });
+
+      listingsContainer.appendChild(card);
+
+    });
+
+  } catch(error){
+
+    count.textContent = "—";
+    showMessage("حدث خطأ أثناء تحميل العروض: " + error.message);
+
+  } finally {
+
+    refreshBtn.disabled = false;
+
+  }
+
+}
+
+loadListings();
 </script>
+
 </body>
 </html>
