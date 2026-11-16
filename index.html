@@ -131,13 +131,6 @@ const supabaseUrl = 'https://wmubsxesiuqnircgxylt.supabase.co';
 const supabaseKey = 'sb_publishable_PqX_Z9PoK7GoIhW0lCyEAw_1wOUI5mX';
 
 const supabase = createClient(supabaseUrl, supabaseKey);
-const WILAYAS = ["أدرار","الشلف","الأغواط","أم البواقي","باتنة","بجاية","بسكرة","بشار","البليدة","البويرة","تمنراست","تبسة","تلمسان","تيارت","تيزي وزو","الجزائر","الجلفة","جيجل","سطيف","سعيدة","سكيكدة","سيدي بلعباس","عنابة","قالمة","قسنطينة","ال  import { createClient } from
-'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
-
-const supabaseUrl = 'https://wmubsxesiuqnircgxylt.supabase.co';
-const supabaseKey = 'sb_publishable_PqX_Z9PoK7GoIhW0lCyEAw_1wOUI5mX';
-
-const supabase = createClient(supabaseUrl, supabaseKey);
 const WILAYAS = ["أدرار","الشلف","الأغواط","أم البواقي","باتنة","بجاية","بسكرة","بشار","البليدة","البويرة","تمنراست","تبسة","تلمسان","تيارت","تيزي وزو","الجزائر","الجلفة","جيجل","سطيف","سعيدة","سكيكدة","سيدي مدية","مستغانم","المسيلة","معسكر","ورقلة","وهران","البيض","إليزي","برج بوعريريج","بومرداس","الطارف","تندوف","تيسمسيلت","الوادي","خنشلة","سوق أهراس","تيبازة","ميلة","عين الدفلى","النعامة","عين تموشنت","غرداية","غليزان","تيميمون","برج باجي مختار","أولاد جلال","بني عباس","عين صالح","عين قزام","تقرت","جانت","المغير","المنيعة"];
 const CATS=["الكل","إلكترونيات","أثاث","ملابس","رياضة","أدوات","مركبات","أخرى"];
 let listings = [];
@@ -287,11 +280,6 @@ $("listingForm").addEventListener("submit", async e => {
     toast("أدخل سعرًا صحيحًا");
     return;
   }
-const { data: { user }, error: authError } =
-  await supabase.auth.getUser();
-
-console.log("Current user:", user?.id);
-console.log("Auth error:", authError);
   const file = $("photo").files[0];
 
   if (file && !["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
