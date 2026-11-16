@@ -215,10 +215,7 @@ $("products").querySelectorAll("[data-contact]").forEach(b => {
 
     const message = prompt("أي تفاصيل إضافية؟") || "";
 
-    if (!p.seller_phone) {
-      toast("البائع لم يضف رقم واتساب");
-      return;
-    }
+  
 
     const orderType = p.kind === "بيع" ? "شراء" : "استئجار";
 
