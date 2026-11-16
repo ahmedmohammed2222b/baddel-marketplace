@@ -446,6 +446,145 @@ supabase.auth.onAuthStateChange((event, session) => {
 
 // ===== END PASSWORD RECOVERY =====
 
+// ===== LOGIN AND SIGNUP =====
+
+const loginBtn = document.getElementById("loginBtn");
+const signupBtn = document.getElementById("signupBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+
+const authBox = document.createElement("div");
+
+authBox.innerHTML = `
+  <div id="authOverlay" style="
+    display:none;position:fixed;inset:0;
+    background:#0009;z-index:99999;
+    align-items:center;justify-content:center;padding:20px">
+
+    <div style="background:white;padding:25px;border-radius:16px;
+      width:100%;max-width:400px;color:#18332e">
+
+      <h2 id="authTitle">تسجيل الدخول</h2>
+
+      <input id="authEmail" type="email"
+        placeholder="البريد الإلكتروني" style="margin:10px 0">
+
+      <input id="authPassword" type="password"
+        placeholder="كلمة المرور" style="margin:10px 0">
+
+      <button id="authSubmit" style="
+        width:100%;background:#176b58;color:white;
+        border:0;padding:13px;border-radius:9px;margin-top:10px">
+        دخول
+      </button>
+
+      <p id="authMessage"></p>
+
+      <button id="authClose" style="
+        width:100%;background:#eee;color:#333;
+        border:0;padding:10px;border-radius:9px">
+        إغلاق
+      </button>
+    </div>
+  </div>
+`;
+
+document.body.appendChild(authBox);
+
+let authMode = "login";
+
+function openAuth(mode) {
+  authMode = mode;
+
+  document.getElementById("authTitle").textContent =
+    mode === "login" ? "تسجيل الدخول" : "إنشاء حساب جديد";
+
+  document.getElementById("authSubmit").textContent =
+    mode === "login" ? "دخول" : "إنشاء الحساب";
+
+  document.getElementById("authMessage").textContent = "";
+  document.getElementById("authOverlay").style.display = "flex";
+}
+
+loginBtn.onclick = () => openAuth("login");
+signupBtn.onclick = () => openAuth("signup");
+
+document.getElementById("authClose").onclick = () => {
+  document.getElementById("authOverlay").style.display = "none";
+};
+
+document.getElementById("authSubmit").onclick = async function () {
+  const email = document.getElementById("authEmail").value.trim();
+  const password = document.getElementById("authPassword").value;
+  const message = document.getElementById("authMessage");
+
+  if (!email || !password) {
+    message.textContent = "أدخل البريد الإلكتروني وكلمة المرور";
+    return;
+  }
+
+  if (password.length < 6) {
+    message.textContent = "كلمة المرور يجب أن تكون 6 أحرف على الأقل";
+    return;
+  }
+
+  this.disabled = true;
+  message.textContent = "جاري التنفيذ...";
+
+  try {
+    let result;
+
+    if (authMode === "login") {
+      result = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+    } else {
+      result = await supabase.auth.signUp({
+        email,
+        password
+      });
+    }
+
+    if (result.error) throw result.error;
+
+    if (authMode === "signup" && !result.data.session) {
+      message.textContent =
+        "تم إنشاء الحساب. راجع بريدك الإلكتروني لتأكيد الحساب.";
+      return;
+    }
+
+    message.textContent =
+      authMode === "login"
+        ? "تم تسجيل الدخول بنجاح!"
+        : "تم إنشاء الحساب بنجاح!";
+
+    document.getElementById("authOverlay").style.display = "none";
+
+  } catch (error) {
+    message.textContent = "حدث خطأ: " + error.message;
+  } finally {
+    this.disabled = false;
+  }
+};
+
+logoutBtn.onclick = async () => {
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    toast("تعذر تسجيل الخروج: " + error.message);
+  } else {
+    toast("تم تسجيل الخروج");
+  }
+};
+
+supabase.auth.onAuthStateChange((event, session) => {
+  loginBtn.style.display = session ? "none" : "inline-block";
+  signupBtn.style.display = session ? "none" : "inline-block";
+  logoutBtn.style.display = session ? "inline-block" : "none";
+});
+
+// ===== END LOGIN AND SIGNUP =====
+
 </script>
 </body>
 </html>
