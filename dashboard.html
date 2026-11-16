@@ -52,7 +52,7 @@ button{
   border-radius:8px;
   cursor:pointer;
 }
-button:disabled{opacity:.5}
+button:disabled{opacity:.5;cursor:not-allowed}
 .card{
   background:white;
   padding:18px;
@@ -70,6 +70,7 @@ button:disabled{opacity:.5}
   margin:15px 0;
 }
 .back{background:#555}
+.delete-btn{background:#b42318;margin-top:10px}
 </style>
 </head>
 
@@ -89,16 +90,15 @@ button:disabled{opacity:.5}
   </section>
 
   <div class="actions">
-    <button id="refreshBtn" onclick="loadListings()">
-      تحديث العروض
-    </button>
+    <button id="refreshBtn">تحديث العروض</button>
 
-    <button class="back" onclick="location.href='index.html'">
+    <button class="back"
+      onclick="location.href='index.html'">
       العودة للموقع
     </button>
   </div>
 
-  <div id="message">جاري التحقق من تسجيل الدخول...</div>
+  <div id="message">جاري التحقق من صلاحيات الإدارة...</div>
 
   <section id="listings"></section>
 
@@ -121,17 +121,18 @@ const listingsContainer = document.getElementById("listings");
 const count = document.getElementById("count");
 const refreshBtn = document.getElementById("refreshBtn");
 
+let isAdmin = false;
+
 function showMessage(text){
   message.textContent = text;
 }
 
-async function loadListings(){
+// التحقق من صلاحية المدير
+async function verifyAdminAndLoad(){
 
   refreshBtn.disabled = true;
-  showMessage("جاري تحميل العروض...");
-  listingsContainer.replaceChildren();
 
-  try {
+  try{
 
     const {data:sessionData,error:sessionError} =
       await db.auth.getSession();
@@ -139,10 +140,56 @@ async function loadListings(){
     if(sessionError) throw sessionError;
 
     if(!sessionData.session){
+
       showMessage("يرجى تسجيل الدخول أولاً.");
       count.textContent = "0";
       return;
     }
+
+    const userId = sessionData.session.user.id;
+
+    const {data:adminRecord,error:adminError} =
+      await db
+        .from("admins")
+        .select("user_id")
+        .eq("user_id",userId)
+        .maybeSingle();
+
+    if(adminError) throw adminError;
+
+    if(!adminRecord){
+
+      showMessage("ليس لديك صلاحية دخول لوحة الإدارة.");
+      count.textContent = "0";
+      return;
+    }
+
+    isAdmin = true;
+
+    await loadListings();
+
+  }catch(error){
+
+    showMessage("حدث خطأ: " + error.message);
+
+  }finally{
+
+    refreshBtn.disabled = !isAdmin;
+
+  }
+
+}
+
+// تحميل العروض
+async function loadListings(){
+
+  if(!isAdmin) return false;
+
+  refreshBtn.disabled = true;
+  showMessage("جاري تحميل العروض...");
+  listingsContainer.replaceChildren();
+
+  try{
 
     const {data,error} = await db
       .from("listings")
@@ -153,11 +200,10 @@ async function loadListings(){
     count.textContent = data.length;
 
     if(data.length === 0){
-      showMessage("لا توجد عروض ظاهرة أو لا توجد بيانات متاحة.");
-      return;
-    }
 
-    showMessage("تم تحميل العروض بنجاح.");
+      showMessage("لا توجد عروض حالياً.");
+      return true;
+    }
 
     data.forEach((item,index)=>{
 
@@ -165,9 +211,11 @@ async function loadListings(){
       card.className = "card";
 
       const title = document.createElement("h3");
-      title.textContent =
+
+      const listingTitle =
         item.title || item.name || "عرض رقم " + (index+1);
 
+      title.textContent = listingTitle;
       card.appendChild(title);
 
       Object.entries(item).forEach(([key,value])=>{
@@ -189,16 +237,36 @@ async function loadListings(){
 
       });
 
+      // زر حذف العرض
+      const deleteBtn = document.createElement("button");
+
+      deleteBtn.className = "delete-btn";
+      deleteBtn.textContent = "حذف العرض";
+
+      deleteBtn.addEventListener("click",()=>{
+
+        deleteListing(item.id,listingTitle,deleteBtn);
+
+      });
+
+      card.appendChild(deleteBtn);
+
       listingsContainer.appendChild(card);
 
     });
 
-  } catch(error){
+    showMessage("تم تحميل العروض بنجاح.");
+
+    return true;
+
+  }catch(error){
 
     count.textContent = "—";
     showMessage("حدث خطأ أثناء تحميل العروض: " + error.message);
 
-  } finally {
+    return false;
+
+  }finally{
 
     refreshBtn.disabled = false;
 
@@ -206,7 +274,72 @@ async function loadListings(){
 
 }
 
-loadListings();
+// حذف العرض من قاعدة البيانات
+async function deleteListing(id,title,button){
+
+  if(!isAdmin){
+    showMessage("ليس لديك صلاحية الحذف.");
+    return;
+  }
+
+  const confirmed = confirm(
+    'هل أنت متأكد من حذف العرض "' + title + '"؟'
+  );
+
+  if(!confirmed) return;
+
+  button.disabled = true;
+  button.textContent = "جاري الحذف...";
+
+  try{
+
+    const {data,error} = await db
+      .from("listings")
+      .delete()
+      .eq("id",id)
+      .select("id");
+
+    if(error) throw error;
+
+    if(!data || data.length === 0){
+
+      throw new Error(
+        "لم يتم حذف العرض. تحقق من المعرّف وصلاحيات الحذف."
+      );
+
+    }
+
+    const refreshed = await loadListings();
+
+    if(refreshed){
+
+      showMessage("تم حذف العرض بنجاح.");
+
+    }else{
+
+      showMessage(
+        "تم حذف العرض، لكن تعذر تحديث القائمة. اضغط تحديث العروض."
+      );
+
+    }
+
+  }catch(error){
+
+    showMessage("تعذر حذف العرض: " + error.message);
+
+    button.disabled = false;
+    button.textContent = "حذف العرض";
+
+  }
+
+}
+
+// تحديث العروض
+refreshBtn.addEventListener("click",loadListings);
+
+// بدء التشغيل
+verifyAdminAndLoad();
+
 </script>
 
 </body>
