@@ -288,8 +288,8 @@ $("listingForm").addEventListener("submit", async e => {
     return;
   }
 
-  if (file && file.size > 1.5 * 1024 * 1024) {
-    toast("حجم الصورة أكبر من 1.5 ميغابايت");
+  if (file && file.size > 5 * 1024 * 1024) {
+    toast("حجم الصورة أكبر من 5 ميغابايت");
     return;
   }
 let imageUrl = "";
