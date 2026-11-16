@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://baddel-marketplace.pages.dev/sitemap.xml
