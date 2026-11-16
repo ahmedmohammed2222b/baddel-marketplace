@@ -134,7 +134,13 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const WILAYAS = ["أدرار","الشلف","الأغواط","أم البواقي","باتنة","بجاية","بسكرة","بشار","البليدة","البويرة","تمنراست","تبسة","تلمسان","تيارت","تيزي وزو","الجزائر","الجلفة","جيجل","سطيف","سعيدة","سكيكدة","سيدي بلعباس","عنابة","قالمة","قسنطينة","المدية","مستغانم","المسيلة","معسكر","ورقلة","وهران","البيض","إليزي","برج بوعريريج","بومرداس","الطارف","تندوف","تيسمسيلت","الوادي","خنشلة","سوق أهراس","تيبازة","ميلة","عين الدفلى","النعامة","عين تموشنت","غرداية","غليزان","تيميمون","برج باجي مختار","أولاد جلال","بني عباس","عين صالح","عين قزام","تقرت","جانت","المغير","المنيعة"];
 const CATS=["الكل","إلكترونيات","أثاث","ملابس","رياضة","أدوات","مركبات","أخرى"];
 let listings = [];
-let activeCategory = "الكل";
+const $=id=>document.getElementById(id);
+function escapeHTML(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function toast(msg){$("toast").textContent=msg;$("toast").style.display="block";setTimeout(()=>$("toast").style.display="none",3000)}
+function fillLocations(){
+  $("wilaya").innerHTML='<option value="">اختر الولاية</option>'+WILAYAS.map(w=>`<option>${escapeHTML(w)}</option>`).join("");
+  $("wilayaFilter").innerHTML='<option value="">كل الولايات</option>'+WILAYAS.map(w=>`<option>${escapeHTML(w)}</option>`).join("");
+}
 
 async function loadListings() {
   const { data, error } = await supabase
@@ -159,7 +165,7 @@ async function loadListings() {
     wilaya: p.wilaya,
     city: p.city || "",
     seller: p.seller,
-seller_phone: p.seller_phone || "",
+    seller_phone: p.seller_phone || "",
     description: p.description || "",
     image: p.image_url || "",
     created: new Date(p.created_at).getTime()
@@ -167,13 +173,7 @@ seller_phone: p.seller_phone || "",
 
   render();
 }
-const $=id=>document.getElementById(id);
-function escapeHTML(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-function toast(msg){$("toast").textContent=msg;$("toast").style.display="block";setTimeout(()=>$("toast").style.display="none",3000)}
-function fillLocations(){
-  $("wilaya").innerHTML='<option value="">اختر الولاية</option>'+WILAYAS.map(w=>`<option>${escapeHTML(w)}</option>`).join("");
-  $("wilayaFilter").innerHTML='<option value="">كل الولايات</option>'+WILAYAS.map(w=>`<option>${escapeHTML(w)}</option>`).join("");
-}
+
 function renderCategories(){
   $("categories").innerHTML=CATS.map(c=>`<button type="button" class="chip ${activeCategory===c?"active":""}" data-cat="${escapeHTML(c)}">${escapeHTML(c)}</button>`).join("");
   $("categories").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{activeCategory=b.dataset.cat;renderCategories();render()}));
@@ -268,6 +268,14 @@ $("kind").addEventListener("change",()=>{$("unitField").style.display=$("kind").
 $("listingForm").addEventListener("submit", async e => {
   e.preventDefault();
 
+  const { data: { user }, error: authError } =
+    await supabase.auth.getUser();
+
+  if (authError || !user) {
+    toast("يجب تسجيل الدخول أولاً لنشر منتج");
+    return;
+  }
+
   const price = Number($("price").value);
 
   if (!Number.isSafeInteger(price) || price < 1) {
@@ -306,12 +314,13 @@ seller_phone: $("seller_phone").value.trim(),
     return;
   }
 
-  const { data, error } = await supabase
-    .from("listings")
-    .insert([listing])
-    .select()
-    .single();
+  listing.user_id = user.id;
 
+const { data, error } = await supabase
+  .from("listings")
+  .insert([listing])
+  .select()
+  .single();
   if (error) {
     console.error(error);
     toast("فشل نشر العرض: " + error.message);
