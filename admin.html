@@ -1,0 +1,146 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>دخول الإدارة | بدّل</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f1f5f2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.login-box {
+  background: white;
+  width: 100%;
+  max-width: 400px;
+  padding: 35px 25px;
+  border-radius: 18px;
+  box-shadow: 0 5px 25px #00000012;
+}
+
+h1 {
+  color: #176b58;
+  text-align: center;
+}
+
+p {
+  text-align: center;
+  color: #777;
+}
+
+input {
+  width: 100%;
+  padding: 14px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 9px;
+  font-size: 16px;
+}
+
+button {
+  width: 100%;
+  padding: 14px;
+  margin-top: 15px;
+  background: #176b58;
+  color: white;
+  border: none;
+  border-radius: 9px;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+#error {
+  color: #c0392b;
+  font-size: 14px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="login-box">
+  <h1>بدّل</h1>
+  <p>تسجيل دخول الإدارة</p>
+
+  <form id="loginForm">
+    <input
+      type="email"
+      id="email"
+      placeholder="البريد الإلكتروني"
+      required
+    >
+
+    <input
+      type="password"
+      id="password"
+      placeholder="كلمة المرور"
+      required
+    >
+
+    <button type="submit">تسجيل الدخول</button>
+  </form>
+
+  <p id="error"></p>
+</div>
+
+<script type="module">
+import { createClient }
+from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+
+const SUPABASE_URL = "https://wmubsxesiuqnircgxylt.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_PqX_Z9PoK7GoIhW0lCyEAw_1wOUI5mX";
+
+const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
+
+const form = document.getElementById("loginForm");
+const errorBox = document.getElementById("error");
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  errorBox.textContent = "جارٍ التحقق من الحساب...";
+
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
+
+  if (error) {
+   errorBox.textContent = error.message;
+    return;
+  }
+
+  const { data: isAdmin, error: adminError } =
+    await supabase.rpc("is_admin");
+
+  if (adminError || isAdmin !== true) {
+    await supabase.auth.signOut();
+    errorBox.textContent = "ليس لديك صلاحية دخول الإدارة";
+    return;
+  }
+
+  window.location.href = "dashboard.html";
+});
+</script>
+
+</body>
+</html>

@@ -91,6 +91,11 @@ footer{text-align:center;color:#829087;font-size:12px;padding:25px}
         <div class="field"><label for="wilaya">الولاية *</label><select id="wilaya" required></select></div>
         <div class="field"><label for="city">المدينة / البلدية</label><input id="city" maxlength="55" placeholder="مثلاً: باب الزوار"></div>
         <div class="field"><label for="seller">اسم البائع *</label><input id="seller" maxlength="45" required placeholder="الاسم المعروض"></div>
+<div class="field">
+  <label for="seller_phone">رقم واتساب البائع *</label>
+  <input id="seller_phone" type="tel" maxlength="20"
+  required placeholder="مثلاً: 0550123456">
+</div>
         <div class="field"><label for="photo">صورة المنتج</label><input id="photo" type="file" accept="image/jpeg,image/png,image/webp"></div>
         <div class="field full"><label for="description">وصف المنتج</label><textarea id="description" maxlength="500" placeholder="اكتب المواصفات والحالة وأي تفاصيل مهمة..."></textarea></div>
       </div>
@@ -139,6 +144,7 @@ async function loadListings() {
     wilaya: p.wilaya,
     city: p.city || "",
     seller: p.seller,
+seller_phone: p.seller_phone || "",
     description: p.description || "",
     image: p.image_url || "",
     created: new Date(p.created_at).getTime()
@@ -173,7 +179,73 @@ function render(){
   <div class="actions"><button class="btn btn-light" type="button" data-detail="${p.id}">التفاصيل</button><button class="btn btn-main" type="button" data-contact="${p.id}">${p.kind==="بيع"?"طلب شراء":"طلب استئجار"}</button></div></div>
  </article>`).join(""):'<div class="empty">لا توجد عروض مطابقة. جرّب تغيير البحث أو أضف عرضًا جديدًا.</div>';
  $("products").querySelectorAll("[data-detail]").forEach(b=>b.addEventListener("click",()=>{const p=listings.find(x=>x.id===Number(b.dataset.detail));if(p)alert("الوصف: "+(p.description||"غير متوفر")+"\nالحالة: "+p.condition+"\nالموقع: "+p.wilaya+" - "+(p.city||"غير محدد"))}));
- $("products").querySelectorAll("[data-contact]").forEach(b=>b.addEventListener("click",()=>toast("هذه واجهة تجريبية فقط؛ طلبات الشراء والحجز والتواصل لم تُفعّل بعد.")));
+
+$("products").querySelectorAll("[data-contact]").forEach(b => {
+  b.addEventListener("click", async () => {
+    const p = listings.find(x => x.id === Number(b.dataset.contact));
+    if (!p) return;
+
+    const customerName = prompt("اكتب اسمك:");
+    if (!customerName || !customerName.trim()) {
+      toast("اكتب اسمك أولاً");
+      return;
+    }
+
+    const customerPhone = prompt("اكتب رقم هاتفك:");
+    if (!customerPhone || !customerPhone.trim()) {
+      toast("اكتب رقم هاتفك أولاً");
+      return;
+    }
+
+    const message = prompt("أي تفاصيل إضافية؟") || "";
+
+    if (!p.seller_phone) {
+      toast("البائع لم يضف رقم واتساب");
+      return;
+    }
+
+    const orderType = p.kind === "بيع" ? "شراء" : "استئجار";
+
+    const { error } = await supabase
+      .from("orders")
+      .insert([{
+        listing_id: p.id,
+        listing_name: p.name,
+        order_type: orderType,
+        customer_name: customerName.trim(),
+        customer_phone: customerPhone.trim(),
+        customer_message: message.trim()
+      }]);
+
+    if (error) {
+      console.error(error);
+      toast("تعذر تسجيل الطلب: " + error.message);
+      return;
+    }
+
+    let phone = p.seller_phone.replace(/\D/g, "");
+
+    if (phone.startsWith("0")) {
+      phone = "213" + phone.substring(1);
+    } else if (phone.startsWith("00")) {
+      phone = phone.substring(2);
+    }
+
+    const whatsappMessage =
+      `السلام عليكم، أنا ${customerName.trim()}\n` +
+      `أريد ${orderType} المنتج: ${p.name}\n` +
+      `السعر: ${p.price} دج\n` +
+      `رقم هاتفي: ${customerPhone.trim()}\n` +
+      `التفاصيل: ${message}`;
+
+    const whatsappURL =
+      "https://wa.me/" + phone +
+      "?text=" + encodeURIComponent(whatsappMessage);
+
+    window.location.href = whatsappURL;
+  });
+});
+
 }
 $("kind").addEventListener("change",()=>{$("unitField").style.display=$("kind").value==="إيجار"?"block":"none"});
 ["search","wilayaFilter","kindFilter"].forEach(id=>$(id).addEventListener(id==="search"?"input":"change",render));
@@ -210,6 +282,7 @@ $("listingForm").addEventListener("submit", async e => {
     wilaya: $("wilaya").value,
     city: $("city").value.trim(),
     seller: $("seller").value.trim(),
+seller_phone: $("seller_phone").value.trim(),
     description: $("description").value.trim()
   };
 
@@ -247,6 +320,117 @@ fillLocations();
 renderCategories();
 render();
 loadListings();
+
+// ===== PASSWORD RECOVERY =====
+
+function showPasswordRecovery() {
+  if (document.getElementById("recoveryBox")) return;
+
+  const box = document.createElement("div");
+  box.id = "recoveryBox";
+
+  box.innerHTML = `
+    <div style="
+      position:fixed;
+      inset:0;
+      z-index:999999;
+      background:rgba(0,0,0,.65);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      direction:rtl;
+    ">
+      <div style="
+        background:white;
+        padding:25px;
+        border-radius:16px;
+        width:100%;
+        max-width:400px;
+        font-family:Arial;
+      ">
+        <h2 style="color:#176b58;text-align:center">
+          تعيين كلمة مرور جديدة
+        </h2>
+
+        <input id="newPassword"
+          type="password"
+          placeholder="كلمة المرور الجديدة"
+          style="width:100%;padding:13px;margin:10px 0;box-sizing:border-box">
+
+        <input id="confirmPassword"
+          type="password"
+          placeholder="تأكيد كلمة المرور"
+          style="width:100%;padding:13px;margin:10px 0;box-sizing:border-box">
+
+        <button id="saveNewPassword"
+          style="width:100%;padding:13px;background:#176b58;color:white;border:0;border-radius:8px;cursor:pointer">
+          حفظ كلمة المرور
+        </button>
+
+        <p id="recoveryMessage" style="text-align:center"></p>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(box);
+
+  document.getElementById("saveNewPassword").onclick =
+    async function () {
+      const password =
+        document.getElementById("newPassword").value;
+
+      const confirm =
+        document.getElementById("confirmPassword").value;
+
+      const message =
+        document.getElementById("recoveryMessage");
+
+      if (password.length < 6) {
+        message.textContent =
+          "كلمة المرور يجب أن تكون 6 أحرف على الأقل";
+        return;
+      }
+
+      if (password !== confirm) {
+        message.textContent =
+          "كلمتا المرور غير متطابقتين";
+        return;
+      }
+
+      this.disabled = true;
+      this.textContent = "جاري الحفظ...";
+
+      const { error } = await supabase.auth.updateUser({
+        password: password
+      });
+
+      if (error) {
+        message.textContent = "فشل الحفظ: " + error.message;
+        this.disabled = false;
+        this.textContent = "حفظ كلمة المرور";
+        return;
+      }
+
+      message.textContent =
+        "تم تغيير كلمة المرور بنجاح!";
+
+      setTimeout(() => {
+        box.remove();
+        window.location.hash = "";
+        window.location.reload();
+      }, 2000);
+    };
+}
+
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === "PASSWORD_RECOVERY" && session) {
+    showPasswordRecovery();
+  }
+});
+
+// ===== END PASSWORD RECOVERY =====
+
 </script>
 </body>
 </html>
