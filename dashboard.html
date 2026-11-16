@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>إدارة عروض بدّل</title>
+<title>بدّل | إدارة العروض</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
@@ -23,15 +23,12 @@ header{
   border-radius:14px;
 }
 header h2{margin-top:0}
-main{
-  max-width:1000px;
-  margin:20px auto;
-}
-.stats{
+main{max-width:1000px;margin:20px auto}
+.stats,.card,.editor,#message{
   background:white;
   padding:20px;
   border-radius:12px;
-  margin-bottom:20px;
+  margin-bottom:16px;
 }
 #count{
   font-size:30px;
@@ -54,23 +51,47 @@ button{
 }
 button:disabled{opacity:.5;cursor:not-allowed}
 .card{
-  background:white;
-  padding:18px;
-  border-radius:12px;
-  margin-bottom:14px;
   border:1px solid #e1eae4;
   overflow-wrap:anywhere;
 }
 .card h3{color:#176b58}
 .card p{margin:9px 0;line-height:1.6}
-#message{
-  background:white;
-  padding:15px;
-  border-radius:10px;
-  margin:15px 0;
-}
 .back{background:#555}
-.delete-btn{background:#b42318;margin-top:10px}
+.delete-btn{background:#b42318}
+.edit-btn{background:#2563a6}
+.card-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:15px;
+}
+.editor{
+  border:1px solid #176b58;
+  margin-top:15px;
+}
+.editor h3{color:#176b58}
+.field{margin-bottom:13px}
+.field label{
+  display:block;
+  margin-bottom:6px;
+  font-weight:bold;
+}
+.field input,.field textarea{
+  width:100%;
+  padding:11px;
+  border:1px solid #ccd8d0;
+  border-radius:7px;
+  font-size:15px;
+  font-family:Arial;
+}
+.field textarea{min-height:100px;resize:vertical}
+.editor-actions{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.cancel-btn{background:#666}
+#message{line-height:1.6}
 </style>
 </head>
 
@@ -91,15 +112,12 @@ button:disabled{opacity:.5;cursor:not-allowed}
 
   <div class="actions">
     <button id="refreshBtn">تحديث العروض</button>
-
-    <button class="back"
-      onclick="location.href='index.html'">
+    <button class="back" onclick="location.href='index.html'">
       العودة للموقع
     </button>
   </div>
 
   <div id="message">جاري التحقق من صلاحيات الإدارة...</div>
-
   <section id="listings"></section>
 
 </main>
@@ -123,11 +141,26 @@ const refreshBtn = document.getElementById("refreshBtn");
 
 let isAdmin = false;
 
+const editableFields = [
+  {key:"name",label:"اسم المنتج"},
+  {key:"category",label:"التصنيف"},
+  {key:"kind",label:"النوع"},
+  {key:"condition",label:"الحالة"},
+  {key:"price",label:"السعر",type:"number"},
+  {key:"unit",label:"الوحدة"},
+  {key:"wilaya",label:"الولاية"},
+  {key:"city",label:"المدينة"},
+  {key:"seller",label:"اسم البائع"},
+  {key:"description",label:"الوصف",type:"textarea"},
+  {key:"image_url",label:"رابط الصورة"},
+  {key:"seller_phone",label:"هاتف البائع"}
+];
+
 function showMessage(text){
   message.textContent = text;
 }
 
-// التحقق من صلاحية المدير
+// التحقق من المدير
 async function verifyAdminAndLoad(){
 
   refreshBtn.disabled = true;
@@ -140,7 +173,6 @@ async function verifyAdminAndLoad(){
     if(sessionError) throw sessionError;
 
     if(!sessionData.session){
-
       showMessage("يرجى تسجيل الدخول أولاً.");
       count.textContent = "0";
       return;
@@ -158,14 +190,12 @@ async function verifyAdminAndLoad(){
     if(adminError) throw adminError;
 
     if(!adminRecord){
-
       showMessage("ليس لديك صلاحية دخول لوحة الإدارة.");
       count.textContent = "0";
       return;
     }
 
     isAdmin = true;
-
     await loadListings();
 
   }catch(error){
@@ -177,7 +207,6 @@ async function verifyAdminAndLoad(){
     refreshBtn.disabled = !isAdmin;
 
   }
-
 }
 
 // تحميل العروض
@@ -193,14 +222,14 @@ async function loadListings(){
 
     const {data,error} = await db
       .from("listings")
-      .select("*");
+      .select("*")
+      .order("created_at",{ascending:false});
 
     if(error) throw error;
 
     count.textContent = data.length;
 
     if(data.length === 0){
-
       showMessage("لا توجد عروض حالياً.");
       return true;
     }
@@ -211,11 +240,7 @@ async function loadListings(){
       card.className = "card";
 
       const title = document.createElement("h3");
-
-      const listingTitle =
-        item.title || item.name || "عرض رقم " + (index+1);
-
-      title.textContent = listingTitle;
+      title.textContent = item.name || "عرض رقم " + (index+1);
       card.appendChild(title);
 
       Object.entries(item).forEach(([key,value])=>{
@@ -225,45 +250,48 @@ async function loadListings(){
         }
 
         const p = document.createElement("p");
+        p.textContent = key + ": " +
+          (typeof value === "object"
+            ? JSON.stringify(value)
+            : value);
 
-        let displayedValue = value;
-
-        if(typeof value === "object"){
-          displayedValue = JSON.stringify(value);
-        }
-
-        p.textContent = key + ": " + displayedValue;
         card.appendChild(p);
 
       });
 
-      // زر حذف العرض
-      const deleteBtn = document.createElement("button");
+      const actions = document.createElement("div");
+      actions.className = "card-actions";
 
+      const editBtn = document.createElement("button");
+      editBtn.className = "edit-btn";
+      editBtn.textContent = "تعديل العرض";
+
+      editBtn.addEventListener("click",()=>{
+        openEditor(card,item,editBtn,deleteBtn);
+      });
+
+      const deleteBtn = document.createElement("button");
       deleteBtn.className = "delete-btn";
       deleteBtn.textContent = "حذف العرض";
 
       deleteBtn.addEventListener("click",()=>{
-
-        deleteListing(item.id,listingTitle,deleteBtn);
-
+        deleteListing(item.id,item.name,deleteBtn);
       });
 
-      card.appendChild(deleteBtn);
+      actions.append(editBtn,deleteBtn);
+      card.appendChild(actions);
 
       listingsContainer.appendChild(card);
 
     });
 
     showMessage("تم تحميل العروض بنجاح.");
-
     return true;
 
   }catch(error){
 
     count.textContent = "—";
-    showMessage("حدث خطأ أثناء تحميل العروض: " + error.message);
-
+    showMessage("خطأ أثناء تحميل العروض: " + error.message);
     return false;
 
   }finally{
@@ -271,22 +299,155 @@ async function loadListings(){
     refreshBtn.disabled = false;
 
   }
-
 }
 
-// حذف العرض من قاعدة البيانات
-async function deleteListing(id,title,button){
+// فتح نموذج التعديل
+function openEditor(card,item,editBtn,deleteBtn){
 
-  if(!isAdmin){
-    showMessage("ليس لديك صلاحية الحذف.");
+  if(!isAdmin) return;
+
+  const oldEditor = card.querySelector(".editor");
+
+  if(oldEditor){
+    oldEditor.remove();
     return;
   }
 
-  const confirmed = confirm(
-    'هل أنت متأكد من حذف العرض "' + title + '"؟'
-  );
+  const editor = document.createElement("section");
+  editor.className = "editor";
 
-  if(!confirmed) return;
+  const heading = document.createElement("h3");
+  heading.textContent = "تعديل بيانات العرض";
+  editor.appendChild(heading);
+
+  const form = document.createElement("form");
+
+  editableFields.forEach(field=>{
+
+    const wrapper = document.createElement("div");
+    wrapper.className = "field";
+
+    const label = document.createElement("label");
+    label.textContent = field.label;
+
+    const input = field.type === "textarea"
+      ? document.createElement("textarea")
+      : document.createElement("input");
+
+    if(field.type === "number"){
+      input.type = "number";
+      input.step = "any";
+    }else if(field.type !== "textarea"){
+      input.type = "text";
+    }
+
+    input.name = field.key;
+    input.value = item[field.key] ?? "";
+
+    wrapper.append(label,input);
+    form.appendChild(wrapper);
+
+  });
+
+  const actions = document.createElement("div");
+  actions.className = "editor-actions";
+
+  const saveBtn = document.createElement("button");
+  saveBtn.type = "submit";
+  saveBtn.textContent = "حفظ التعديلات";
+
+  const cancelBtn = document.createElement("button");
+  cancelBtn.type = "button";
+  cancelBtn.className = "cancel-btn";
+  cancelBtn.textContent = "إلغاء";
+
+  cancelBtn.addEventListener("click",()=>{
+    editor.remove();
+  });
+
+  actions.append(saveBtn,cancelBtn);
+  form.appendChild(actions);
+
+  form.addEventListener("submit",async(event)=>{
+
+    event.preventDefault();
+
+    if(!isAdmin) return;
+
+    const updates = {};
+
+    for(const field of editableFields){
+
+      const input = form.elements.namedItem(field.key);
+      const value = input.value.trim();
+
+      if(field.key === "price" && value !== ""){
+        const numberValue = Number(value);
+
+        if(!Number.isFinite(numberValue)){
+          showMessage("يرجى إدخال سعر صحيح.");
+          return;
+        }
+
+        updates[field.key] = numberValue;
+
+      }else{
+        updates[field.key] = value === "" ? null : value;
+      }
+
+    }
+
+    saveBtn.disabled = true;
+    cancelBtn.disabled = true;
+    saveBtn.textContent = "جاري الحفظ...";
+
+    try{
+
+      const {data,error} = await db
+        .from("listings")
+        .update(updates)
+        .eq("id",item.id)
+        .select("id");
+
+      if(error) throw error;
+
+      if(!data || data.length === 0){
+        throw new Error("لم يتم حفظ التعديلات. تحقق من الصلاحيات.");
+      }
+
+      showMessage("تم تحديث العرض بنجاح.");
+      await loadListings();
+
+    }catch(error){
+
+      showMessage("تعذر حفظ التعديلات: " + error.message);
+
+      saveBtn.disabled = false;
+      cancelBtn.disabled = false;
+      saveBtn.textContent = "حفظ التعديلات";
+
+    }
+
+  });
+
+  editor.appendChild(form);
+  card.appendChild(editor);
+
+  editor.scrollIntoView({
+    behavior:"smooth",
+    block:"center"
+  });
+
+}
+
+// حذف العرض
+async function deleteListing(id,title,button){
+
+  if(!isAdmin) return;
+
+  if(!confirm('هل أنت متأكد من حذف العرض "' + (title || "") + '"؟')){
+    return;
+  }
 
   button.disabled = true;
   button.textContent = "جاري الحذف...";
@@ -302,31 +463,15 @@ async function deleteListing(id,title,button){
     if(error) throw error;
 
     if(!data || data.length === 0){
-
-      throw new Error(
-        "لم يتم حذف العرض. تحقق من المعرّف وصلاحيات الحذف."
-      );
-
+      throw new Error("لم يتم حذف العرض. تحقق من الصلاحيات.");
     }
 
-    const refreshed = await loadListings();
-
-    if(refreshed){
-
-      showMessage("تم حذف العرض بنجاح.");
-
-    }else{
-
-      showMessage(
-        "تم حذف العرض، لكن تعذر تحديث القائمة. اضغط تحديث العروض."
-      );
-
-    }
+    await loadListings();
+    showMessage("تم حذف العرض بنجاح.");
 
   }catch(error){
 
     showMessage("تعذر حذف العرض: " + error.message);
-
     button.disabled = false;
     button.textContent = "حذف العرض";
 
@@ -334,10 +479,10 @@ async function deleteListing(id,title,button){
 
 }
 
-// تحديث العروض
+// تحديث القائمة
 refreshBtn.addEventListener("click",loadListings);
 
-// بدء التشغيل
+// التشغيل
 verifyAdminAndLoad();
 
 </script>
