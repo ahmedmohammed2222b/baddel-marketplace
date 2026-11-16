@@ -292,7 +292,30 @@ $("listingForm").addEventListener("submit", async e => {
     toast("حجم الصورة أكبر من 1.5 ميغابايت");
     return;
   }
+let imageUrl = "";
 
+const file = $("photo").files[0];
+
+if (file) {
+  const filePath = `${user.id}/${Date.now()}-${file.name}`;
+
+  const { data: uploadedImage, error: uploadError } =
+    await supabase.storage
+      .from("product-images")
+      .upload(filePath, file);
+
+  if (uploadError) {
+    console.error(uploadError);
+    toast("فشل رفع الصورة: " + uploadError.message);
+    return;
+  }
+
+  const { data: publicImage } = supabase.storage
+    .from("product-images")
+    .getPublicUrl(uploadedImage.path);
+
+  imageUrl = publicImage.publicUrl;
+}
   const listing = {
     name: $("name").value.trim(),
     category: $("category").value,
@@ -304,6 +327,7 @@ $("listingForm").addEventListener("submit", async e => {
     city: $("city").value.trim(),
     seller: $("seller").value.trim(),
 seller_phone: $("seller_phone").value.trim(),
+image_url: imageUrl,
     description: $("description").value.trim()
   };
 
@@ -328,7 +352,7 @@ const { data, error } = await supabase
   listings.unshift({
     ...listing,
     id: data.id,
-    image: "",
+    image: imageUrl,
     created: Date.now()
   });
 
